@@ -5,8 +5,8 @@ from flask import Flask, request, jsonify, render_template_string
 # ---------- CHANGE THESE ----------
 TARGET_LAT = 10.939364403017777
 TARGET_LON =  76.9589869994405
-RADIUS_M = 100           # allowed radius in metres
-MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
+RADIUS_M = 1000           # allowed radius in metres
+MAX_ACCURACY_M = 1000      # reject if GPS accuracy is worse than this
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeIlFGPouCtgkxLdJXzvVliWZGGJsMNrYZx2WbToaGj8Yf7sw/viewform?usp=header"
 # ----------------------------------
 
