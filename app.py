@@ -13,8 +13,8 @@ from math import radians, sin, cos, asin, sqrt
 from flask import Flask, request, jsonify, render_template_string
 
 # ---------- CHANGE THESE ----------
-TARGET_LAT = 11.0168      # latitude of the allowed place
-TARGET_LON = 76.9558      # longitude of the allowed place
+TARGET_LAT = 10.937384938987593
+TARGET_LON = 76.95915556980837     # longitude of the allowed place
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 50       # reject if GPS accuracy is worse than this
 SHEET_URL = "https://script.google.com/macros/s/AKfycbzPGSjM_nVRYe2kMgs0NDadPnzdiJ2rO-FVIifO_32fZgXizZgxzsBcNMmjTB9mmRSg/exec"
