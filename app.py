@@ -7,7 +7,7 @@ TARGET_LAT = 10.937384938987593
 TARGET_LON = 76.95915556980837
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
-FORM_URL = "PASTE_YOUR_GOOGLE_FORM_LINK_HERE"
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeIlFGPouCtgkxLdJXzvVliWZGGJsMNrYZx2WbToaGj8Yf7sw/viewform?usp=header"
 # ----------------------------------
 
 app = Flask(__name__)
@@ -33,8 +33,7 @@ PAGE = """
  button:disabled{background:#999}
  #msg{margin-top:12px;font-weight:bold}
 </style></head><body>
-<h2>Attendance</h2>
-<p id="info">Checking your location. The form will open automatically if you are at the venue.</p>
+<p id="info">Checking location...</p>
 <button id="btn" onclick="verify()" style="display:none">Try again</button>
 <div id="msg"></div>
 <script>
@@ -60,8 +59,9 @@ function verify(){
       const d=await r.json();
       if(d.ok){
         msg.style.color='green';
-        msg.textContent=d.message+' Opening form...';
-        window.location.href=d.url;
+        msg.textContent='';
+        window.location.replace(d.url);
+        setTimeout(()=>{msg.innerHTML='<a href="'+d.url+'" style="font-size:18px">Tap here to open the form</a>';},4000);
         return;
       }
       msg.style.color='red';
