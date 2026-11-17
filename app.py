@@ -10,7 +10,7 @@ TARGET_LAT = 10.937384938987593
 TARGET_LON = 76.95915556980837
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
-SHEET_URL = "https://script.google.com/macros/s/AKfycbzPGSjM_nVRYe2kMgs0NDadPnzdiJ2rO-FVIifO_32fZgXizZgxzsBcNMmjTB9mmRSg/exec"   # must end with /exec
+GOOGLE FORM_URL = "https://forms.gle/vakbv5d3mcMbjXij6"   # must end with /exec
 # ----------------------------------
 
 app = Flask(__name__)
