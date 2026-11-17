@@ -1,6 +1,3 @@
-import json
-import urllib.request
-from datetime import datetime
 from math import radians, sin, cos, asin, sqrt
 
 from flask import Flask, request, jsonify, render_template_string
@@ -10,8 +7,7 @@ TARGET_LAT = 10.937384938987593
 TARGET_LON = 76.95915556980837
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
-SHEET_URL = "https://script.google.com/macros/s/XXXXXXXX/exec"
-GOOGLEFORM_URL = "https://forms.gle/vakbv5d3mcMbjXij6"   # must end with /exec
+FORM_URL = "https://forms.gle/vakbv5d3mcMbjXij6RE"
 # ----------------------------------
 
 app = Flask(__name__)
@@ -30,27 +26,22 @@ PAGE = """
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Attendance Form</title>
+<title>Attendance</title>
 <style>
  body{font-family:Arial;max-width:420px;margin:30px auto;padding:0 16px}
- input,button{width:100%;padding:10px;margin:6px 0;font-size:16px;box-sizing:border-box}
- button{background:#1a73e8;color:#fff;border:0;border-radius:6px}
+ button{width:100%;padding:12px;font-size:16px;background:#1a73e8;color:#fff;border:0;border-radius:6px}
  button:disabled{background:#999}
  #msg{margin-top:12px;font-weight:bold}
 </style></head><body>
-<h2>Attendance Form</h2>
-<input id="name" placeholder="Name">
-<input id="regno" placeholder="Register No / Email">
-<button id="btn" onclick="submitForm()">Submit</button>
+<h2>Attendance</h2>
+<p>Tap the button to verify you are at the venue. The Google Form will open if you are within the allowed area.</p>
+<button id="btn" onclick="verify()">Verify location &amp; open form</button>
 <div id="msg"></div>
 <script>
-function submitForm(){
-  const name=document.getElementById('name').value.trim();
-  const regno=document.getElementById('regno').value.trim();
+function verify(){
   const msg=document.getElementById('msg');
   const btn=document.getElementById('btn');
   msg.style.color='black';
-  if(!name||!regno){msg.style.color='red';msg.textContent='Fill all fields';return;}
   if(!navigator.geolocation){msg.style.color='red';msg.textContent='Geolocation not supported';return;}
   btn.disabled=true;
   msg.textContent='Getting your location...';
@@ -62,13 +53,18 @@ function submitForm(){
     navigator.geolocation.clearWatch(watchId);
     clearTimeout(timer);
     try{
-      const r=await fetch('/submit',{method:'POST',
+      const r=await fetch('/check',{method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name,regno,
-          lat:best.coords.latitude,lon:best.coords.longitude,
+        body:JSON.stringify({lat:best.coords.latitude,lon:best.coords.longitude,
           accuracy:best.coords.accuracy})});
       const d=await r.json();
-      msg.style.color=d.ok?'green':'red';
+      if(d.ok){
+        msg.style.color='green';
+        msg.textContent=d.message+' Opening form...';
+        window.location.href=d.url;
+        return;
+      }
+      msg.style.color='red';
       msg.textContent=d.message;
     }catch(e){
       msg.style.color='red';msg.textContent='Network error. Try again.';
@@ -108,8 +104,8 @@ def index():
     return render_template_string(PAGE)
 
 
-@app.route("/submit", methods=["POST"])
-def submit():
+@app.route("/check", methods=["POST"])
+def check():
     d = request.get_json(force=True)
     try:
         lat, lon = float(d["lat"]), float(d["lon"])
@@ -126,19 +122,7 @@ def submit():
         return jsonify(ok=False,
                        message=f"You are {dist:.0f} m away. Must be within {RADIUS_M} m.")
 
-    row = {
-        "time": datetime.now().isoformat(timespec="seconds"),
-        "name": d.get("name"), "regno": d.get("regno"),
-        "lat": lat, "lon": lon, "distance_m": round(dist, 1),
-    }
-    try:
-        req = urllib.request.Request(
-            SHEET_URL, data=json.dumps(row).encode(),
-            headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=10)
-    except Exception as e:
-        return jsonify(ok=False, message=f"Save failed: {e}")
-    return jsonify(ok=True, message=f"Submitted ✔ (distance {dist:.0f} m)")
+    return jsonify(ok=True, message=f"Location verified ({dist:.0f} m).", url=FORM_URL)
 
 
 if __name__ == "__main__":
