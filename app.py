@@ -106,8 +106,8 @@ def submit():
             SHEET_URL, data=json.dumps(row).encode(),
             headers={"Content-Type": "application/json"})
         urllib.request.urlopen(req, timeout=10)
-    except Exception:
-        return jsonify(ok=False, message="Could not save response. Try again.")
+        except Exception as e:
+        return jsonify(ok=False, message=f"Save failed: {e}")
     return jsonify(ok=True, message=f"Submitted ✔ (distance {dist:.0f} m)")
 
 
