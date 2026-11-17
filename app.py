@@ -7,7 +7,7 @@ TARGET_LAT = 10.937384938987593
 TARGET_LON = 76.95915556980837
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeIlFGPouCtgkxLdJXzvVliWZGGJsMNrYZx2WbToaGj8Yf7sw/viewform?usp=header"
+FORM_URL = "PASTE_YOUR_GOOGLE_FORM_LINK_HERE"
 # ----------------------------------
 
 app = Flask(__name__)
@@ -34,8 +34,8 @@ PAGE = """
  #msg{margin-top:12px;font-weight:bold}
 </style></head><body>
 <h2>Attendance</h2>
-<p>Tap the button to verify you are at the venue. The Google Form will open if you are within the allowed area.</p>
-<button id="btn" onclick="verify()">Verify location &amp; open form</button>
+<p id="info">Checking your location. The form will open automatically if you are at the venue.</p>
+<button id="btn" onclick="verify()" style="display:none">Try again</button>
 <div id="msg"></div>
 <script>
 function verify(){
@@ -43,7 +43,7 @@ function verify(){
   const btn=document.getElementById('btn');
   msg.style.color='black';
   if(!navigator.geolocation){msg.style.color='red';msg.textContent='Geolocation not supported';return;}
-  btn.disabled=true;
+  btn.style.display='none';
   msg.textContent='Getting your location...';
   let best=null, done=false;
 
@@ -69,7 +69,7 @@ function verify(){
     }catch(e){
       msg.style.color='red';msg.textContent='Network error. Try again.';
     }
-    btn.disabled=false;
+    btn.style.display='block';
   }
 
   const watchId=navigator.geolocation.watchPosition(pos=>{
@@ -82,7 +82,7 @@ function verify(){
     clearTimeout(timer);
     msg.style.color='red';
     msg.textContent='Location permission denied / unavailable';
-    btn.disabled=false;
+    btn.style.display='block';
   },{enableHighAccuracy:true,maximumAge:0});
 
   const timer=setTimeout(()=>{
@@ -91,10 +91,11 @@ function verify(){
       navigator.geolocation.clearWatch(watchId);
       msg.style.color='red';
       msg.textContent='Could not get location. Try again.';
-      btn.disabled=false;
+      btn.style.display='block';
     } else finish();
   },15000);
 }
+window.onload=verify;
 </script></body></html>
 """
 
