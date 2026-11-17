@@ -5,8 +5,8 @@ Run:  pip install flask
 NOTE: Phones only give GPS to HTTPS pages. Deploy with HTTPS
       (PythonAnywhere / Render / ngrok) for real use.
 """
-import csv
-import os
+import json
+import urllib.request
 from datetime import datetime
 from math import radians, sin, cos, asin, sqrt
 
@@ -17,7 +17,7 @@ TARGET_LAT = 11.0168      # latitude of the allowed place
 TARGET_LON = 76.9558      # longitude of the allowed place
 RADIUS_M = 100            # allowed radius in metres
 MAX_ACCURACY_M = 50       # reject if GPS accuracy is worse than this
-CSV_FILE = "responses.csv"
+SHEET_URL = "https://script.google.com/macros/s/AKfycbzPGSjM_nVRYe2kMgs0NDadPnzdiJ2rO-FVIifO_32fZgXizZgxzsBcNMmjTB9mmRSg/exec"
 # ----------------------------------
 
 app = Flask(__name__)
@@ -96,13 +96,18 @@ def submit():
         return jsonify(ok=False,
                        message=f"You are {dist:.0f} m away. Must be within {RADIUS_M} m.")
 
-    new_file = not os.path.exists(CSV_FILE)
-    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        if new_file:
-            w.writerow(["time", "name", "regno", "lat", "lon", "distance_m"])
-        w.writerow([datetime.now().isoformat(timespec="seconds"),
-                    d.get("name"), d.get("regno"), lat, lon, round(dist, 1)])
+        row = {
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "name": d.get("name"), "regno": d.get("regno"),
+        "lat": lat, "lon": lon, "distance_m": round(dist, 1),
+    }
+    try:
+        req = urllib.request.Request(
+            SHEET_URL, data=json.dumps(row).encode(),
+            headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        return jsonify(ok=False, message="Could not save response. Try again.")
     return jsonify(ok=True, message=f"Submitted ✔ (distance {dist:.0f} m)")
 
 
