@@ -3,11 +3,11 @@ from math import radians, sin, cos, asin, sqrt
 from flask import Flask, request, jsonify, render_template_string
 
 # ---------- CHANGE THESE ----------
-TARGET_LAT = 10.939364403017777
-TARGET_LON =  76.9589869994405
-RADIUS_M = 1000           # allowed radius in metres
-MAX_ACCURACY_M = 1000      # reject if GPS accuracy is worse than this
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeIlFGPouCtgkxLdJXzvVliWZGGJsMNrYZx2WbToaGj8Yf7sw/viewform?usp=header"
+TARGET_LAT = 10.939019 
+TARGET_LON = 76.958774  
+RADIUS_M = 500           # allowed radius in metres
+MAX_ACCURACY_M = 500      # reject if GPS accuracy is worse than this
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe10RF6MCqOqbCYuEk2Lms6CHBEG_alKklN7LEllBi0kEZydQ/viewform?usp=header"
 # ----------------------------------
 
 app = Flask(__name__)
