@@ -1,25 +1,20 @@
 import os
-import urllib.parse
-import urllib.request
 from math import radians, sin, cos, asin, sqrt
 
 from flask import Flask, request, jsonify, render_template_string
 
 # ---------- LOCATION SETTINGS ----------
-TARGET_LAT = 10.937290 
-TARGET_LON = 76.958365 
-RADIUS_M = 100            # allowed radius in metres
-MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
+CENTER_LAT = 10.939019
+CENTER_LNG = 76.958774
+DEFAULT_RADIUS_M = 200     # allowed radius in metres
+IPHONE_RADIUS_M = 500      # iPhones often give rough GPS; lower this for stricter checking
+MAX_ACCURACY_M = 100       # reject if GPS accuracy is worse than this
 # ---------------------------------------
 
-# ---------- GOOGLE FORM (kept on the server, never sent to the browser) ----------
-# Set these in Vercel -> Settings -> Environment Variables (recommended),
-# or type them directly between the quotes below.
-FORM_POST_URL = os.environ.get("FORM_POST_URL", "https://forms.gle/r4wBRdXKa5ZVk4yN6")       # .../forms/d/e/<ID>/formResponse
-ENTRY_NAME = os.environ.get("ENTRY_NAME", "")             # e.g. entry.1234567890
-ENTRY_REGNO = os.environ.get("ENTRY_REGNO", "")           # e.g. entry.2345678901
-ENTRY_LOCATION = os.environ.get("ENTRY_LOCATION", "")     # optional, leave empty to skip
-# --------------------------------------------------------------------------------
+# Embed link of the Google Form (Send -> "<>" tab -> copy the src="..." value).
+# Set it in Vercel -> Settings -> Environment Variables as FORM_EMBED_URL.
+# It stays on the server and is sent to the browser only AFTER the location check passes.
+FORM_EMBED_URL = os.environ.get("FORM_EMBED_URL", "")
 
 app = Flask(__name__)
 
@@ -33,81 +28,89 @@ def haversine_m(lat1, lon1, lat2, lon2):
 
 
 PAGE = """
-<!doctype html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Attendance Form</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hall Attendance Verification</title>
 <style>
- body{font-family:Arial;max-width:420px;margin:30px auto;padding:0 16px}
- input,button{width:100%;padding:10px;margin:6px 0;font-size:16px;box-sizing:border-box}
- button{background:#1a73e8;color:#fff;border:0;border-radius:6px}
- button:disabled{background:#999}
- #msg{margin-top:12px;font-weight:bold}
-</style></head><body>
-<h2>Attendance Form</h2>
-<input id="name" placeholder="Name">
-<input id="regno" placeholder="Register No">
-<button id="btn" onclick="submitForm()">Submit</button>
-<div id="msg"></div>
+ body{margin:0;font-family:Arial,sans-serif}
+ #location-display{position:fixed;top:10px;right:10px;background:rgba(255,255,255,.9);
+   padding:10px;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,.2);font-size:14px;z-index:999}
+ #form-container{display:flex;justify-content:center;align-items:center;min-height:100vh;text-align:center;padding:0 12px}
+ #form-container iframe{border:none;box-shadow:0 4px 8px rgba(0,0,0,.2);width:100%;max-width:700px;height:90vh}
+ h2{color:#333}
+ button{padding:10px 20px;font-size:16px;background:#1a73e8;color:#fff;border:0;border-radius:6px;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="location-display">Detecting your location...</div>
+<div id="form-container"><h2>Loading...</h2></div>
 <script>
-function submitForm(){
-  const name=document.getElementById('name').value.trim();
-  const regno=document.getElementById('regno').value.trim();
-  const msg=document.getElementById('msg');
-  const btn=document.getElementById('btn');
-  msg.style.color='black';
-  if(!name||!regno){msg.style.color='red';msg.textContent='Fill all fields';return;}
-  if(!navigator.geolocation){msg.style.color='red';msg.textContent='Geolocation not supported';return;}
-  btn.disabled=true;
-  msg.textContent='Getting your location...';
-  let best=null, done=false;
+const box = document.getElementById('form-container');
+const info = document.getElementById('location-display');
+
+function showError(title, note){
+  box.innerHTML = '<div><h2>'+title+'</h2><p style="color:red">'+(note||'')+
+    '</p><button onclick="checkAccess()">Try again</button></div>';
+}
+
+function checkAccess(){
+  box.innerHTML = '<h2>Loading...</h2>';
+  if(!navigator.geolocation){ showError('Geolocation is not supported by your browser.'); return; }
+  let best = null, done = false;
 
   async function finish(){
-    if(done||!best) return;
-    done=true;
+    if(done || !best) return;
+    done = true;
     navigator.geolocation.clearWatch(watchId);
     clearTimeout(timer);
+    info.textContent = 'Your Location: Lat '+best.coords.latitude.toFixed(6)+
+                       ', Lng '+best.coords.longitude.toFixed(6);
     try{
-      const r=await fetch('/submit',{method:'POST',
+      const r = await fetch('/check', {method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name,regno,
-          lat:best.coords.latitude,lon:best.coords.longitude,
-          accuracy:best.coords.accuracy})});
-      const d=await r.json();
-      msg.style.color=d.ok?'green':'red';
-      msg.textContent=d.message;
-      if(d.ok) return;
-    }catch(e){
-      msg.style.color='red';msg.textContent='Network error. Try again.';
-    }
-    btn.disabled=false;
+        body: JSON.stringify({lat:best.coords.latitude, lon:best.coords.longitude,
+                              accuracy:best.coords.accuracy})});
+      const d = await r.json();
+      if(d.ok){
+        box.innerHTML = '';
+        const f = document.createElement('iframe');
+        f.src = d.url;
+        f.setAttribute('frameborder','0');
+        box.appendChild(f);
+      } else {
+        showError(d.message, 'If iPhone user: enable "Precise Location" in Settings, then try again.');
+      }
+    }catch(e){ showError('Network error.', 'Check your internet and try again.'); }
   }
 
-  const watchId=navigator.geolocation.watchPosition(pos=>{
-    if(!best||pos.coords.accuracy<best.coords.accuracy) best=pos;
-    msg.textContent='Improving GPS accuracy: '+Math.round(best.coords.accuracy)+' m...';
-    if(best.coords.accuracy<=30) finish();
-  },err=>{
-    done=true;
+  const watchId = navigator.geolocation.watchPosition(pos => {
+    if(!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+    info.textContent = 'Improving GPS accuracy: '+Math.round(best.coords.accuracy)+' m...';
+    if(best.coords.accuracy <= 30) finish();
+  }, () => {
+    done = true;
     navigator.geolocation.clearWatch(watchId);
     clearTimeout(timer);
-    msg.style.color='red';
-    msg.textContent='Location permission denied / unavailable';
-    btn.disabled=false;
-  },{enableHighAccuracy:true,maximumAge:0});
+    showError('Location access is required to open this form.',
+              'If iPhone user: use Chrome or the Google app (avoid Safari).');
+  }, {enableHighAccuracy:true, maximumAge:0});
 
-  const timer=setTimeout(()=>{
+  const timer = setTimeout(() => {
     if(!best){
-      done=true;
+      done = true;
       navigator.geolocation.clearWatch(watchId);
-      msg.style.color='red';
-      msg.textContent='Could not get location. Try again.';
-      btn.disabled=false;
+      showError('Could not get your location.', 'Move near a window or outdoors and retry.');
     } else finish();
-  },15000);
+  }, 15000);
 }
-</script></body></html>
+
+document.addEventListener('DOMContentLoaded', checkAccess);
+</script>
+</body>
+</html>
 """
 
 
@@ -116,8 +119,8 @@ def index():
     return render_template_string(PAGE)
 
 
-@app.route("/submit", methods=["POST"])
-def submit():
+@app.route("/check", methods=["POST"])
+def check():
     d = request.get_json(force=True)
     try:
         lat, lon = float(d["lat"]), float(d["lon"])
@@ -125,41 +128,24 @@ def submit():
     except (KeyError, ValueError):
         return jsonify(ok=False, message="Invalid location data")
 
-    name = str(d.get("name", "")).strip()[:100]
-    regno = str(d.get("regno", "")).strip()[:50]
-    if not name or not regno:
-        return jsonify(ok=False, message="Fill all fields")
-
     if acc > MAX_ACCURACY_M:
         return jsonify(ok=False,
-                       message=f"GPS accuracy too low ({acc:.0f} m). Move outdoors and retry.")
+                       message=f"GPS accuracy too low ({acc:.0f} m).")
 
-    dist = haversine_m(lat, lon, TARGET_LAT, TARGET_LON)
-    if dist > RADIUS_M:
+    ua = request.headers.get("User-Agent", "")
+    radius = IPHONE_RADIUS_M if any(x in ua for x in ("iPhone", "iPad", "iPod")) else DEFAULT_RADIUS_M
+
+    dist = haversine_m(lat, lon, CENTER_LAT, CENTER_LNG)
+    if dist > radius:
         return jsonify(ok=False,
-                       message=f"You are {dist:.0f} m away. Must be within {RADIUS_M} m.")
+                       message="Access Denied: You are not within the allowed location range.")
 
-    if not (FORM_POST_URL and ENTRY_NAME and ENTRY_REGNO):
+    if not FORM_EMBED_URL:
         return jsonify(ok=False, message="Server is not configured. Contact the organiser.")
 
-    fields = {ENTRY_NAME: name, ENTRY_REGNO: regno}
-    if ENTRY_LOCATION:
-        fields[ENTRY_LOCATION] = f"{lat:.6f}, {lon:.6f} ({dist:.0f} m)"
-
-    try:
-        req = urllib.request.Request(
-            FORM_POST_URL,
-            data=urllib.parse.urlencode(fields).encode(),
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status != 200 or "formResponse" not in resp.geturl():
-                raise RuntimeError("Form rejected the response")
-    except Exception:
-        return jsonify(ok=False, message="Could not save response. Try again.")
-
-    return jsonify(ok=True, message=f"Attendance recorded ✔ (distance {dist:.0f} m)")
+    return jsonify(ok=True, url=FORM_EMBED_URL)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
