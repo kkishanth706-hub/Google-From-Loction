@@ -15,7 +15,7 @@ MAX_ACCURACY_M = 100      # reject if GPS accuracy is worse than this
 # ---------- GOOGLE FORM (kept on the server, never sent to the browser) ----------
 # Set these in Vercel -> Settings -> Environment Variables (recommended),
 # or type them directly between the quotes below.
-FORM_POST_URL = os.environ.get("FORM_POST_URL", "")       # .../forms/d/e/<ID>/formResponse
+FORM_POST_URL = os.environ.get("FORM_POST_URL", "https://forms.gle/r4wBRdXKa5ZVk4yN6")       # .../forms/d/e/<ID>/formResponse
 ENTRY_NAME = os.environ.get("ENTRY_NAME", "")             # e.g. entry.1234567890
 ENTRY_REGNO = os.environ.get("ENTRY_REGNO", "")           # e.g. entry.2345678901
 ENTRY_LOCATION = os.environ.get("ENTRY_LOCATION", "")     # optional, leave empty to skip
