@@ -14,7 +14,7 @@ MAX_ACCURACY_M = 100       # reject if GPS accuracy is worse than this
 # Embed link of the Google Form (Send -> "<>" tab -> copy the src="..." value).
 # Set it in Vercel -> Settings -> Environment Variables as FORM_EMBED_URL.
 # It stays on the server and is sent to the browser only AFTER the location check passes.
-FORM_EMBED_URL = os.environ.get("FORM_EMBED_URL", "")
+FORM_EMBED_URL = os.environ.get("FORM_EMBED_URL", "https://forms.gle/r4wBRdXKa5ZVk4yN6")
 
 app = Flask(__name__)
 
