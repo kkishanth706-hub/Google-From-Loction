@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, render_template_string
 CENTER_LAT = 10.939019
 CENTER_LNG = 76.958774
 DEFAULT_RADIUS_M = 200     # allowed radius in metres
-IPHONE_RADIUS_M = 400      # iPhones often give rough GPS; lower this for stricter checking
+IPHONE_RADIUS_M = 200      # iPhones often give rough GPS; lower this for stricter checking
 MAX_ACCURACY_M = 100       # reject if GPS accuracy is worse than this
 # ---------------------------------------
 
