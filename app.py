@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template_string
 # ---------- LOCATION SETTINGS ----------
 CENTER_LAT = 10.939019
 CENTER_LNG = 76.958774
-DEFAULT_RADIUS_M =50     # allowed radius in metres
+DEFAULT_RADIUS_M =3000    # allowed radius in metres
 IPHONE_RADIUS_M = 70      # iPhones often give rough GPS; lower this for stricter checking
 MAX_ACCURACY_M = 80       # reject if GPS accuracy is worse than this
 # ---------------------------------------
@@ -14,7 +14,7 @@ MAX_ACCURACY_M = 80       # reject if GPS accuracy is worse than this
 # Embed link of the Google Form (Send -> "<>" tab -> copy the src="..." value).
 # Set it in Vercel -> Settings -> Environment Variables as FORM_EMBED_URL.
 # It stays on the server and is sent to the browser only AFTER the location check passes.
-FORM_EMBED_URL = os.environ.get("FORM_EMBED_URL", "https://forms.gle/MAbPK74CCok4B9qa6")
+FORM_EMBED_URL = os.environ.get("FORM_EMBED_URL", "https://claude.ai/chat/61873fad-6504-48c5-9ef4-88c7ce41d517")
 
 app = Flask(__name__)
 
