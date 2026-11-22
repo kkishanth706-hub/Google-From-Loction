@@ -8,7 +8,7 @@ CENTER_LAT = 10.942657
 CENTER_LNG = 76.955587
 DEFAULT_RADIUS_M =200   # allowed radius in metres
 IPHONE_RADIUS_M = 70      # iPhones often give rough GPS; lower this for stricter checking
-MAX_ACCURACY_M = 80       # reject if GPS accuracy is worse than this
+MAX_ACCURACY_M = 200       # reject if GPS accuracy is worse than this
 # ---------------------------------------
 
 # Embed link of the Google Form (Send -> "<>" tab -> copy the src="..." value).
