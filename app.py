@@ -4,8 +4,8 @@ from math import radians, sin, cos, asin, sqrt
 from flask import Flask, request, jsonify, render_template_string
 
 # ---------- LOCATION SETTINGS ----------
-CENTER_LAT = 10.948319
-CENTER_LNG = 76.916352
+CENTER_LAT = 10.939019
+CENTER_LNG = 76.958774
 DEFAULT_RADIUS_M =50   # allowed radius in metres
 IPHONE_RADIUS_M = 50      # iPhones often give rough GPS; lower this for stricter checking
 MAX_ACCURACY_M = 50       # reject if GPS accuracy is worse than this
